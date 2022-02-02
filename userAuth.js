@@ -20,11 +20,15 @@ function init(passport,name){
         catch(e){return done(e)}
     } )}
     passport.use(new LocalStrategy({usernameField:'name'},auth))
-    passport.serializeUser((row,done)=> done(null,row.id) )
-    passport.deserializeUser((id,done)=> {
-        db.get(`SELECT id,name FROM users WHERE id = ?`,[id],(err,row)=>{
-            if(!row){return done(null,false)}
-            else{done(null,row)}
+    passport.serializeUser((row,done)=> {
+        console.log('serail')
+        process.nextTick(()=>{
+            return done(null,{id:row.id,name:row.name})
+        })
+        } )
+    passport.deserializeUser((row,done)=> {
+        process.nextTick(()=>{
+            return done(null,row)
         })
     }
     )

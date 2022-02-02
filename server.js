@@ -2,33 +2,44 @@ const express = require('express')
 const ejs = require('ejs')
 const app = express()
 const passport = require('passport')
-const database = require('./database');
 const init = require('./userAuth')
+const database = require('./database')
 const session = require('express-session');
-const flash = require('express-flash')
+const flash = require('express-flash');
+var SQLiteStore = require('connect-sqlite3')(session);
 app.set('view-engine','ejs')
 init(passport)
 app.use(flash())
 app.use(express.urlencoded({extended:false}))
+
+
 app.use(session({
     secret:'CHEESEBURGER UGHHH',
     resave:false,
-    saveUninitialized:false
+    saveUninitialized:false,
+    store:new SQLiteStore({db:'sessions.db',dir:'./'})
 }))
 
 app.use(passport.initialize())
 
-app.use(passport.session())
+app.use(passport.authenticate('session'))
 
-app.get('/',checkAuth,(req,res)=>{
+app.get('/',(req,res)=> res.redirect('/succ'))
+
+app.get('/succ',checkAuth,(req,res)=>{
     res.render('home.ejs',{name:req.user.name})
+})
+
+app.post('/succ',(req,res)=>{
+    req.logout();
+    res.redirect('/login')
 })
 
 app.get('/register',checkNotAuth,(req,res)=>{
     res.render('register.ejs')
 })
 
-app.post('/register',(req,res)=>{
+app.post('/register',checkNotAuth,(req,res)=>{
     console.log(req.body.name,req.body.password)
     database.CreateUser(req.body.name,req.body.password)
     res.redirect('/login')
@@ -39,7 +50,7 @@ app.get('/login',checkNotAuth,(req,res)=>{
 })
 
 app.post('/login',checkNotAuth,passport.authenticate('local',{
-    successRedirect:'/',
+    successRedirect:'/succ',
     failureRedirect:'/login',
     failureFlash:true
 }))  
@@ -48,14 +59,16 @@ function checkAuth(req,res,next){
     if(req.isAuthenticated()){
         return next()
     }
+    console.log('fail')
     res.redirect('/login')
 }
 
 function checkNotAuth(req,res,next){
     if(req.isAuthenticated()){
-        return res.redirect('/')
+        console.log('succ')
+        return res.redirect('/succ')
     }
-    return next()
+    next()
 }
 
 
