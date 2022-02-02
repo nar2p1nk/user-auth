@@ -5,10 +5,10 @@ const passport = require('passport')
 const database = require('./database');
 const init = require('./userAuth')
 const session = require('express-session');
-
+const flash = require('express-flash')
 app.set('view-engine','ejs')
 init(passport)
-
+app.use(flash())
 app.use(express.urlencoded({extended:false}))
 app.use(session({
     secret:'CHEESEBURGER UGHHH',
@@ -20,7 +20,11 @@ app.use(passport.initialize())
 
 app.use(passport.session())
 
-app.get('/register',(req,res)=>{
+app.get('/',checkAuth,(req,res)=>{
+    res.render('home.ejs',{name:req.user.name})
+})
+
+app.get('/register',checkNotAuth,(req,res)=>{
     res.render('register.ejs')
 })
 
@@ -30,7 +34,7 @@ app.post('/register',(req,res)=>{
     res.redirect('/login')
 })
 
-app.get('/login',(req,res)=>{
+app.get('/login',checkNotAuth,(req,res)=>{
     res.render('login.ejs')
 })
 
